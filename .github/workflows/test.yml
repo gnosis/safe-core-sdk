@@ -13,5 +13,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: yarn install
-      - run: yarn build
+      - run: yarn build:sdk-types
+      - run: yarn build:sdk
+      - run: yarn build:service
+      - run: yarn build:sea
       - run: yarn test

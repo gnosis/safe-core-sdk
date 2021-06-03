@@ -1,0 +1,70 @@
+{
+  "name": "@gnosis.pm/safe-service-client",
+  "version": "v0.1.0-alpha.0",
+  "description": "Safe Service Client",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "keywords": [
+    "Ethereum",
+    "Gnosis",
+    "Safe",
+    "Service"
+  ],
+  "scripts": {
+    "build": "yarn rimraf dist && tsc",
+    "test": "mocha --require ts-node/register tests/**/*.test.ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "tslint -p tsconfig.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gnosis/safe-core-sdk.git"
+  },
+  "author": "Gnosis (https://gnosis.io)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gnosis/safe-core-sdk/issues"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "homepage": "https://github.com/gnosis/safe-core-sdk#readme",
+  "devDependencies": {
+    "@gnosis.pm/safe-core-sdk": "^0.1.2",
+    "@types/chai": "^4.2.18",
+    "@types/chai-as-promised": "^7.1.4",
+    "@types/mocha": "^8.2.2",
+    "@types/node": "^15.3.0",
+    "@typescript-eslint/eslint-plugin": "^4.24.0",
+    "@typescript-eslint/parser": "^4.24.0",
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
+    "eslint": "^7.26.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "husky": "^6.0.0",
+    "lint-staged": "^11.0.0",
+    "mocha": "^8.4.0",
+    "prettier": "^2.3.0",
+    "rimraf": "^3.0.2",
+    "ts-generator": "^0.1.1",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.4"
+  },
+  "lint-staged": {
+    "src/**/!(*test).ts": [
+      "yarn lint",
+      "prettier --write"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "dependencies": {
+    "@gnosis.pm/safe-core-sdk-types": "^0.1.0",
+    "axios": "^0.21.1"
+  }
+}
