@@ -1,5 +1,5 @@
 import { Provider } from '@ethersproject/providers'
-import { Signer } from 'ethers'
+import { Signer } from '@ethersproject/abstract-signer';
 import { GnosisSafe, MultiSend } from '../../typechain'
 import MultiSendAbi from '../abis/MultiSendAbi.json'
 import SafeAbiV120 from '../abis/SafeAbiV1-2-0.json'

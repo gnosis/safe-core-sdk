@@ -1,4 +1,4 @@
-import { BigNumber } from 'ethers'
+import { BigNumber } from '@ethersproject/bignumber';
 import { GnosisSafe } from '../../../typechain'
 import SafeTransaction, { OperationType } from './SafeTransaction'
 

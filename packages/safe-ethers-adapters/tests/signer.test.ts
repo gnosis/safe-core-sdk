@@ -11,33 +11,6 @@ chai.use(chaiAsPromised)
 chai.use(sinonChai)
 
 describe('SafeEthersSigner', () => {
-  describe('create', async () => {
-    it('should be able to create an instance without a provider', async () => {
-      const provider: any = {
-        getNetwork: sinon.fake.returns({ chainId: 42 }),
-        getCode: sinon.fake.returns("0xbaddad42")
-      }
-      const signer = new VoidSigner("some_address", provider)
-      const service: any = {}
-      const safeSigner = await SafeEthersSigner.create("some_safe", signer, service)
-      chai.expect(safeSigner).to.be.not.null
-      chai.expect(safeSigner.provider).to.be.null
-      chai.expect(safeSigner.safe.getAddress()).to.be.equals("some_safe")
-    })
-    it('should be able to create an instance with provider', async () => {
-      const provider: any = {
-        getNetwork: sinon.fake.returns({ chainId: 42 }),
-        getCode: sinon.fake.returns("0xbaddad42")
-      }
-      const signer = new VoidSigner("some_address", provider)
-      const service: any = {}
-      const safeSigner = await SafeEthersSigner.create("some_safe", signer, service, provider)
-      chai.expect(safeSigner).to.be.not.null
-      chai.expect(safeSigner.provider).to.be.equals(provider)
-      chai.expect(safeSigner.safe.getAddress()).to.be.equals("some_safe")
-    })
-  })
-
   describe('sendTransaction', async () => {
     it('should submit contract interaction to sevice', async () => {
       const txData = {

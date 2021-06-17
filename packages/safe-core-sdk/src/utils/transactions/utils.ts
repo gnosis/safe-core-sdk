@@ -1,4 +1,5 @@
-import { utils } from 'ethers'
+import { pack as solidityPack } from '@ethersproject/solidity'
+import { arrayify } from '@ethersproject/bytes'
 import { GnosisSafe } from '../../../typechain'
 import { ZERO_ADDRESS } from '../constants'
 import { estimateTxGas } from './gas'
@@ -52,8 +53,8 @@ export async function standardizeSafeTransactionData(
 }
 
 function encodeMetaTransaction(tx: MetaTransactionData): string {
-  const data = utils.arrayify(tx.data)
-  const encoded = utils.solidityPack(
+  const data = arrayify(tx.data)
+  const encoded = solidityPack(
     ['uint8', 'address', 'uint256', 'uint256', 'bytes'],
     [tx.operation, tx.to, tx.value, data.length, data]
   )

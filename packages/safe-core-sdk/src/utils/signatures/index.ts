@@ -1,5 +1,5 @@
 import { bufferToHex, ecrecover, pubToAddress } from 'ethereumjs-util'
-import { Signer } from 'ethers'
+import { Signer } from '@ethersproject/abstract-signer';
 import { sameString } from '../../utils'
 import { EthSignSignature, SafeSignature } from './SafeSignature'
 

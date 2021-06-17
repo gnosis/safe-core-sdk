@@ -1,5 +1,7 @@
 import { Provider } from '@ethersproject/providers'
-import { BigNumber, ContractTransaction, Signer } from 'ethers'
+import { Signer } from '@ethersproject/abstract-signer';
+import { BigNumber } from '@ethersproject/bignumber';
+import { ContractTransaction } from '@ethersproject/contracts';
 import { ContractNetworksConfig } from './configuration/contracts'
 import { SafeSignature } from './utils/signatures/SafeSignature'
 import SafeTransaction, { SafeTransactionDataPartial } from './utils/transactions/SafeTransaction'

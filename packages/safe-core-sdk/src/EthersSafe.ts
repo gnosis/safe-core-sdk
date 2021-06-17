@@ -1,5 +1,7 @@
 import { Provider } from '@ethersproject/providers'
-import { BigNumber, ContractTransaction, Signer } from 'ethers'
+import { Signer } from '@ethersproject/abstract-signer';
+import { BigNumber } from '@ethersproject/bignumber';
+import { ContractTransaction } from '@ethersproject/contracts';
 import ContractManager from './managers/contractManager'
 import ModuleManager from './managers/moduleManager'
 import OwnerManager from './managers/ownerManager'
