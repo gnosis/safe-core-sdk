@@ -1,6 +1,7 @@
 import { OperationType, SafeTransaction } from '@gnosis.pm/safe-core-sdk-types'
+import EthAdapter from 'ethereumLibs/EthAdapter'
 import { BigNumber } from 'ethers'
-import { GnosisSafe } from '../../../typechain'
+import GnosisSafeContract from '../../contracts/GnosisSafe/GnosisSafeContract'
 
 function estimateDataGasCosts(data: string): number {
   const reducer = (accumulator: number, currentValue: string) => {
@@ -16,30 +17,33 @@ function estimateDataGasCosts(data: string): number {
 }
 
 export async function estimateTxGas(
-  safeContract: GnosisSafe,
+  safeContract: GnosisSafeContract,
+  ethAdapter: EthAdapter,
   to: string,
   valueInWei: string,
   data: string,
   operation: OperationType
 ): Promise<number> {
   let txGasEstimation = 0
-  const safeAddress = safeContract.address
+  const safeAddress = safeContract.getAddress()
 
-  const estimateData: string = safeContract.interface.encodeFunctionData('requiredTxGas', [
+  const estimateData: string = safeContract.encode('requiredTxGas', [
     to,
     valueInWei,
     data,
     operation
   ])
   try {
-    const estimateResponse = await safeContract.provider.call(
-      {
-        to: safeAddress,
-        from: safeAddress,
-        data: estimateData
-      },
-      'latest'
-    )
+    const estimateResponse = (
+      await ethAdapter.estimateGas(
+        {
+          to: safeAddress,
+          from: safeAddress,
+          data: estimateData
+        },
+        'latest'
+      )
+    ).toString()
     txGasEstimation = BigNumber.from('0x' + estimateResponse.substring(138)).toNumber() + 10000
   } catch (error) {}
 
@@ -48,7 +52,7 @@ export async function estimateTxGas(
     let additionalGas = 10000
     for (let i = 0; i < 10; i++) {
       try {
-        const estimateResponse = await safeContract.provider.call({
+        const estimateResponse = await ethAdapter.call({
           to: safeAddress,
           from: safeAddress,
           data: estimateData,
@@ -66,13 +70,13 @@ export async function estimateTxGas(
   }
 
   try {
-    const estimateGas = await safeContract.provider.estimateGas({
+    const estimateGas = await ethAdapter.estimateGas({
       to,
       from: safeAddress,
       value: valueInWei,
       data
     })
-    return estimateGas.toNumber()
+    return estimateGas
   } catch (error) {
     if (operation === OperationType.DelegateCall) {
       return 0
@@ -82,25 +86,28 @@ export async function estimateTxGas(
 }
 
 export async function estimateGasForTransactionExecution(
-  safeContract: GnosisSafe,
+  safeContract: GnosisSafeContract,
   from: string,
   tx: SafeTransaction
 ): Promise<number> {
   try {
-    const gas = await safeContract.estimateGas.execTransaction(
-      tx.data.to,
-      tx.data.value,
-      tx.data.data,
-      tx.data.operation,
-      tx.data.safeTxGas,
-      tx.data.baseGas,
-      tx.data.gasPrice,
-      tx.data.gasToken,
-      tx.data.refundReceiver,
-      tx.encodedSignatures(),
+    const gas = await safeContract.estimateGas(
+      'execTransaction',
+      [
+        tx.data.to,
+        tx.data.value,
+        tx.data.data,
+        tx.data.operation,
+        tx.data.safeTxGas,
+        tx.data.baseGas,
+        tx.data.gasPrice,
+        tx.data.gasToken,
+        tx.data.refundReceiver,
+        tx.encodedSignatures()
+      ],
       { from, gasPrice: tx.data.gasPrice }
     )
-    return gas.toNumber()
+    return gas
   } catch (error) {
     return Promise.reject(error)
   }

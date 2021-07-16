@@ -6,7 +6,7 @@ import {
 } from '@ethersproject/abstract-provider'
 import { Signer, VoidSigner } from '@ethersproject/abstract-signer'
 import { Deferrable } from '@ethersproject/properties'
-import EthersSafe, { Safe } from '@gnosis.pm/safe-core-sdk'
+import Safe, { EthersAdapter } from '@gnosis.pm/safe-core-sdk'
 import { OperationType, SafeTransactionData } from '@gnosis.pm/safe-core-sdk-types'
 import { BigNumber, ethers } from 'ethers'
 import { SafeService } from 'service'
@@ -44,7 +44,8 @@ export class SafeEthersSigner extends VoidSigner {
     provider?: Provider,
     options?: SafeEthersSignerOptions
   ): Promise<SafeEthersSigner> {
-    const safe = await EthersSafe.create({ ethers, safeAddress, providerOrSigner: signer })
+    const ethAdapter = new EthersAdapter({ ethers, signer })
+    const safe = await Safe.create({ ethAdapter, safeAddress })
     return new SafeEthersSigner(safe, service, provider, options)
   }
 

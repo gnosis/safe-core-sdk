@@ -1,11 +1,12 @@
 import chai from 'chai'
 import chaiAsPromised from 'chai-as-promised'
-import { deployments, ethers, waffle } from 'hardhat'
-import EthersSafe, { ContractNetworksConfig } from '../src'
-import { defaultContractNetworks } from '../src/configuration/contracts'
+import { deployments, waffle } from 'hardhat'
+import Safe, { ContractNetworksConfig } from '../src'
 import { ZERO_ADDRESS } from '../src/utils/constants'
-import { getAccounts } from './utils/setupConfig'
 import { getMultiSend, getSafeWithOwners } from './utils/setupContracts'
+import { getEthAdapter } from './utils/setupEthAdapter'
+import { getAccounts } from './utils/setupTestNetwork'
+
 chai.use(chaiAsPromised)
 
 describe('Safe contracts manager', () => {
@@ -28,12 +29,12 @@ describe('Safe contracts manager', () => {
     it('should fail if the current network is not a default network and no contractNetworks is provided', async () => {
       const { safe, accounts } = await setupTests()
       const [account1] = accounts
+      const ethAdapter = await getEthAdapter(account1.signer)
       await chai
         .expect(
-          EthersSafe.create({
-            ethers,
-            safeAddress: safe.address,
-            providerOrSigner: account1.signer.provider
+          Safe.create({
+            ethAdapter,
+            safeAddress: safe.address
           })
         )
         .to.be.rejectedWith('Safe contracts not found in the current network')
@@ -42,12 +43,12 @@ describe('Safe contracts manager', () => {
     it('should fail if Safe Proxy contract is not deployed in the current network', async () => {
       const { accounts, contractNetworks } = await setupTests()
       const [account1] = accounts
+      const ethAdapter = await getEthAdapter(account1.signer)
       await chai
         .expect(
-          EthersSafe.create({
-            ethers,
+          Safe.create({
+            ethAdapter,
             safeAddress: ZERO_ADDRESS,
-            providerOrSigner: account1.signer.provider,
             contractNetworks
           })
         )
@@ -60,33 +61,25 @@ describe('Safe contracts manager', () => {
         [chainId]: { multiSendAddress: ZERO_ADDRESS }
       }
       const [account1] = accounts
+      const ethAdapter = await getEthAdapter(account1.signer)
       await chai
         .expect(
-          EthersSafe.create({
-            ethers,
+          Safe.create({
+            ethAdapter,
             safeAddress: safe.address,
-            providerOrSigner: account1.signer.provider,
             contractNetworks
           })
         )
         .to.be.rejectedWith('MultiSend contract is not deployed in the current network')
     })
 
-    it('should set default MultiSend contract', async () => {
-      const mainnetGnosisDAOSafe = '0x0DA0C3e52C977Ed3cBc641fF02DD271c3ED55aFe'
-      const safeSdk = await EthersSafe.create({ ethers, safeAddress: mainnetGnosisDAOSafe })
-      chai
-        .expect(safeSdk.getMultiSendAddress())
-        .to.be.eq(defaultContractNetworks[1].multiSendAddress)
-    })
-
     it('should set the MultiSend contract available in the current network', async () => {
       const { safe, accounts, chainId, contractNetworks } = await setupTests()
       const [account1] = accounts
-      const safeSdk = await EthersSafe.create({
-        ethers,
+      const ethAdapter = await getEthAdapter(account1.signer)
+      const safeSdk = await Safe.create({
+        ethAdapter,
         safeAddress: safe.address,
-        providerOrSigner: account1.signer.provider,
         contractNetworks
       })
       chai

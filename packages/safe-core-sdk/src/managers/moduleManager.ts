@@ -1,18 +1,19 @@
-import { GnosisSafe } from '../../typechain'
+import GnosisSafeContract from '../contracts/GnosisSafe/GnosisSafeContract'
+import EthAdapter from '../ethereumLibs/EthAdapter'
 import { isRestrictedAddress, sameString } from '../utils'
 import { SENTINEL_ADDRESS } from '../utils/constants'
 
 class ModuleManager {
-  #ethers: any
-  #safeContract: GnosisSafe
+  #ethAdapter: EthAdapter
+  #safeContract: GnosisSafeContract
 
-  constructor(ethers: any, safeContract: GnosisSafe) {
-    this.#ethers = ethers
+  constructor(ethAdapter: EthAdapter, safeContract: GnosisSafeContract) {
+    this.#ethAdapter = ethAdapter
     this.#safeContract = safeContract
   }
 
   private validateModuleAddress(moduleAddress: string): void {
-    const isValidAddress = this.#ethers.utils.isAddress(moduleAddress)
+    const isValidAddress = this.#ethAdapter.isAddress(moduleAddress)
     if (!isValidAddress || isRestrictedAddress(moduleAddress)) {
       throw new Error('Invalid module address provided')
     }
@@ -47,7 +48,7 @@ class ModuleManager {
     this.validateModuleAddress(moduleAddress)
     const modules = await this.getModules()
     this.validateModuleIsNotEnabled(moduleAddress, modules)
-    return this.#safeContract.interface.encodeFunctionData('enableModule', [moduleAddress])
+    return this.#safeContract.encode('enableModule', [moduleAddress])
   }
 
   async encodeDisableModuleData(moduleAddress: string): Promise<string> {
@@ -55,10 +56,7 @@ class ModuleManager {
     const modules = await this.getModules()
     const moduleIndex = this.validateModuleIsEnabled(moduleAddress, modules)
     const prevModuleAddress = moduleIndex === 0 ? SENTINEL_ADDRESS : modules[moduleIndex - 1]
-    return this.#safeContract.interface.encodeFunctionData('disableModule', [
-      prevModuleAddress,
-      moduleAddress
-    ])
+    return this.#safeContract.encode('disableModule', [prevModuleAddress, moduleAddress])
   }
 }
 

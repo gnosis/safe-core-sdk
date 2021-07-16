@@ -3,7 +3,6 @@ import '@nomiclabs/hardhat-waffle'
 import '@nomiclabs/hardhat-web3'
 import dotenv from 'dotenv'
 import 'hardhat-deploy'
-import 'hardhat-typechain'
 import { HardhatUserConfig, HttpNetworkUserConfig } from 'hardhat/types'
 import yargs from 'yargs'
 

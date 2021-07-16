@@ -6,7 +6,7 @@ import {
   GnosisSafe,
   MultiSend,
   SocialRecoveryModule
-} from '../../typechain'
+} from '../../src/types/typechain/ethers-v5'
 
 export const getSafeSingleton = async () => {
   const SafeDeployment = await deployments.get('GnosisSafe')

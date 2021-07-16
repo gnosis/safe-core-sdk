@@ -1,6 +1,6 @@
 import { SafeSignature } from '@gnosis.pm/safe-core-sdk-types'
 
-export class EthSafeSignature implements SafeSignature {
+export class EthSignSignature implements SafeSignature {
   signer: string
   data: string
 
@@ -13,7 +13,7 @@ export class EthSafeSignature implements SafeSignature {
    */
   constructor(signer: string, signature: string) {
     this.signer = signer
-    this.data = signature.replace(/1b$/, '1f').replace(/1c$/, '20')
+    this.data = signature
   }
 
   /**

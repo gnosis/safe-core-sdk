@@ -1,10 +1,13 @@
 import chai from 'chai'
 import chaiAsPromised from 'chai-as-promised'
-import { BigNumber, VoidSigner } from 'ethers'
-import { deployments, ethers, waffle } from 'hardhat'
-import EthersSafe, { ContractNetworksConfig } from '../src'
-import { getAccounts } from './utils/setupConfig'
+import { BigNumber } from 'ethers'
+import { deployments, waffle } from 'hardhat'
+import Safe, { ContractNetworksConfig } from '../src'
 import { getMultiSend, getSafeWithOwners } from './utils/setupContracts'
+import { getEthAdapter } from './utils/setupEthAdapter'
+import { getAccounts } from './utils/setupTestNetwork'
+import { waitSafeTxReceipt } from './utils/transactions'
+
 chai.use(chaiAsPromised)
 
 describe('Safe Core SDK', () => {
@@ -24,76 +27,33 @@ describe('Safe Core SDK', () => {
   })
 
   describe('connect', async () => {
-    it('should fail if Safe contract is not deployed', async () => {
-      const { accounts, contractNetworks } = await setupTests()
-      const [account1] = accounts
-      const mainnetGnosisDAOSafe = '0x0DA0C3e52C977Ed3cBc641fF02DD271c3ED55aFe'
-      await chai
-        .expect(
-          EthersSafe.create({
-            ethers,
-            safeAddress: mainnetGnosisDAOSafe,
-            providerOrSigner: account1.signer.provider,
-            contractNetworks
-          })
-        )
-        .to.be.rejectedWith('Safe Proxy contract is not deployed in the current network')
-    })
-
-    it('should fail if signer is not connected to a provider', async () => {
+    it('should connect ethAdapter to Safe address', async () => {
       const { safe, accounts, contractNetworks } = await setupTests()
-      const [account1] = accounts
-      const voidSigner = new VoidSigner(account1.address)
-      await chai
-        .expect(
-          EthersSafe.create({
-            ethers,
-            safeAddress: safe.address,
-            providerOrSigner: voidSigner,
-            contractNetworks
-          })
-        )
-        .to.be.rejectedWith('Signer must be connected to a provider')
-    })
-
-    it('should connect with signer', async () => {
-      const { safe, accounts, contractNetworks } = await setupTests()
-      const [account1] = accounts
-      const safeSdk = await EthersSafe.create({
-        ethers,
+      const [account1, account2] = accounts
+      const ethAdapter = await getEthAdapter(account1.signer)
+      const safeSdk = await Safe.create({
+        ethAdapter,
         safeAddress: safe.address,
-        providerOrSigner: account1.signer,
         contractNetworks
       })
-      chai.expect(safeSdk.getProvider()).to.be.eq(account1.signer.provider)
-      chai.expect(safeSdk.getSigner()).to.be.eq(account1.signer)
-    })
+      chai.expect(safeSdk.getAddress()).to.be.eq(safe.address)
+      chai
+        .expect(await safeSdk.getEthAdapter().getSignerAddress())
+        .to.be.eq(await account1.signer.getAddress())
 
-    it('should connect with provider', async () => {
-      const { safe, accounts, contractNetworks } = await setupTests()
-      const [account1] = accounts
-      const safeSdk = await EthersSafe.create({
-        ethers,
-        safeAddress: safe.address,
-        providerOrSigner: account1.signer.provider,
-        contractNetworks
-      })
-      chai.expect(safeSdk.getProvider()).to.be.eq(account1.signer.provider)
-      chai.expect(safeSdk.getSigner()).to.be.undefined
-    })
+      const ethAdapter2 = await getEthAdapter(account2.signer)
+      const safeSdk2 = await safeSdk.connect({ ethAdapter: ethAdapter2, contractNetworks })
+      chai.expect(safeSdk2.getAddress()).to.be.eq(safe.address)
+      chai
+        .expect(await safeSdk2.getEthAdapter().getSignerAddress())
+        .to.be.eq(await account2.signer.getAddress())
 
-    it('should connect to Mainnet with default provider', async () => {
-      const { contractNetworks } = await setupTests()
-      const mainnetGnosisDAOSafe = '0x0DA0C3e52C977Ed3cBc641fF02DD271c3ED55aFe'
-      const safeSdk = await EthersSafe.create({
-        ethers,
-        safeAddress: mainnetGnosisDAOSafe,
-        contractNetworks
-      })
-      const defaultProvider = safeSdk.getProvider()
-      chai.expect(ethers.providers.Provider.isProvider(defaultProvider)).to.be.true
-      chai.expect((await defaultProvider.getNetwork()).chainId).to.be.eq(1)
-      chai.expect(safeSdk.getSigner()).to.be.undefined
+      const safe2 = await getSafeWithOwners([accounts[2].address])
+      const safeSdk3 = await safeSdk2.connect({ safeAddress: safe2.address })
+      chai.expect(safeSdk3.getAddress()).to.be.eq(safe2.address)
+      chai
+        .expect(await safeSdk3.getEthAdapter().getSignerAddress())
+        .to.be.eq(await account2.signer.getAddress())
     })
   })
 
@@ -101,10 +61,10 @@ describe('Safe Core SDK', () => {
     it('should return the Safe contract version', async () => {
       const { safe, accounts, contractNetworks } = await setupTests()
       const [account1] = accounts
-      const safeSdk = await EthersSafe.create({
-        ethers,
+      const ethAdapter = await getEthAdapter(account1.signer)
+      const safeSdk = await Safe.create({
+        ethAdapter,
         safeAddress: safe.address,
-        providerOrSigner: account1.signer,
         contractNetworks
       })
       const contractVersion = await safeSdk.getContractVersion()
@@ -116,13 +76,29 @@ describe('Safe Core SDK', () => {
     it('should return the Safe contract address', async () => {
       const { safe, accounts, contractNetworks } = await setupTests()
       const [account1] = accounts
-      const safeSdk = await EthersSafe.create({
-        ethers,
+      const ethAdapter = await getEthAdapter(account1.signer)
+      const safeSdk = await Safe.create({
+        ethAdapter,
         safeAddress: safe.address,
-        providerOrSigner: account1.signer,
         contractNetworks
       })
       chai.expect(safeSdk.getAddress()).to.be.eq(safe.address)
+    })
+  })
+
+  describe('getEthAdapter', async () => {
+    it('should return the connected EthAdapter', async () => {
+      const { safe, accounts, contractNetworks } = await setupTests()
+      const [account1] = accounts
+      const ethAdapter = await getEthAdapter(account1.signer)
+      const safeSdk = await Safe.create({
+        ethAdapter,
+        safeAddress: safe.address,
+        contractNetworks
+      })
+      chai
+        .expect(await safeSdk.getEthAdapter().getSignerAddress())
+        .to.be.eq(await account1.signer.getAddress())
     })
   })
 
@@ -130,11 +106,11 @@ describe('Safe Core SDK', () => {
     it('should return the Safe nonce', async () => {
       const { accounts, contractNetworks } = await setupTests()
       const [account1, account2] = accounts
+      const ethAdapter = await getEthAdapter(account1.signer)
       const safe = await getSafeWithOwners([account1.address])
-      const safeSdk = await EthersSafe.create({
-        ethers,
+      const safeSdk = await Safe.create({
+        ethAdapter,
         safeAddress: safe.address,
-        providerOrSigner: account1.signer,
         contractNetworks
       })
       chai.expect(await safeSdk.getNonce()).to.be.eq(0)
@@ -144,7 +120,7 @@ describe('Safe Core SDK', () => {
         data: '0x'
       })
       const txResponse = await safeSdk.executeTransaction(tx)
-      await txResponse.wait()
+      await waitSafeTxReceipt(txResponse)
       chai.expect(await safeSdk.getNonce()).to.be.eq(1)
     })
   })
@@ -153,10 +129,10 @@ describe('Safe Core SDK', () => {
     it('should return the chainId of the current network', async () => {
       const { safe, accounts, chainId, contractNetworks } = await setupTests()
       const [account1] = accounts
-      const safeSdk = await EthersSafe.create({
-        ethers,
+      const ethAdapter = await getEthAdapter(account1.signer)
+      const safeSdk = await Safe.create({
+        ethAdapter,
         safeAddress: safe.address,
-        providerOrSigner: account1.signer,
         contractNetworks
       })
       chai.expect(await safeSdk.getChainId()).to.be.eq(chainId)
@@ -167,10 +143,10 @@ describe('Safe Core SDK', () => {
     it('should return the balance of the Safe contract', async () => {
       const { safe, accounts, contractNetworks } = await setupTests()
       const [account1] = accounts
-      const safeSdk = await EthersSafe.create({
-        ethers,
+      const ethAdapter = await getEthAdapter(account1.signer)
+      const safeSdk = await Safe.create({
+        ethAdapter,
         safeAddress: safe.address,
-        providerOrSigner: account1.signer,
         contractNetworks
       })
       chai.expect(await safeSdk.getBalance()).to.be.eq(0)
